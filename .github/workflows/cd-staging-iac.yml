@@ -1,0 +1,34 @@
+name: CD - Staging IaC Provisioning & Reproducibility
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  provision-and-test-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Initialize & Validate IaC
+        run: |
+          terraform init
+          terraform fmt -check
+          terraform validate
+
+      - name: Provision Staging Infrastructure
+        run: ./provision.sh apply
+
+      - name: Verify Running Staging Containers
+        run: docker ps
+
+      - name: Test Environment Reproducibility (Destroy & Recreate)
+        run: ./provision.sh recreate
